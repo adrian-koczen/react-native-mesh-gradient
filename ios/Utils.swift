@@ -1,133 +1,80 @@
-import Foundation
 import SwiftUI
-import UIKit
-import simd
 
-@available(iOS 18.0, *)
-struct MeshGradientView: View {
-    @State private var isAnimating = false
-    @ObservedObject var options: Options
-    @State var elementsInRow: Int = 0
+typealias RGBA = (red: Double, green: Double, blue: Double, opacity: Double)
+
+class Options: ObservableObject {
+    @Published var points: Array<SIMD2<Float>> = [
+        [0.0, 0.0], [1.0, 0.0],
+        [0.0, 1.0], [1.0, 1.0]
+    ]
+    @Published var colors: Array<Color> = [
+        .red, .orange,
+        .blue, .blue
+    ]
+    @Published var animatedColors: Array<Color> = [
+        .red, .blue,
+        .purple, .orange
+    ]
+    @Published var error: String?
+    @Published var animationDuration: Double?
+}
+
+struct CustomError: Error {}
+
+func getColors (hexArray: NSArray) throws -> Array<Color> {
+    var colors: Array<Color> = []
     
-    var body: some View {
-        if options.error != nil {
-            ErrorMessage(message: options.error)
-        } else
-        if #available(iOS 18.0, *) {
-            VStack {
-                MeshGradient(
-                    width: elementsInRow,
-                    height: elementsInRow,
-                    points: options.points,
-                    colors: isAnimating ? options.animatedColors : options.colors,
-                    smoothsColors: true
-                ).onAppear{
-                    if (options.points.count > 0) {
-                        elementsInRow = Int(sqrt(Double(options.points.count)))
-                    }
-                    
-                    if (options.animatedColors.count > 0 && options.animationDuration != nil) {
-                        withAnimation(
-                            .easeInOut( duration: options.animationDuration!)
-                            .repeatForever(autoreverses: true)
-                        ) {
-                            isAnimating.toggle()
-                        }
-                    }
-                }.ignoresSafeArea(.all)
-            }
+    for hex in hexArray {
+        if let hex = hex as? NSString {
+            let rgba = convertHexToRgba(hex: hex as NSString)
+            let color = Color(red: rgba.red, green: rgba.green, blue: rgba.blue, opacity: rgba.opacity)
+            
+            colors.append(color)
         } else {
-            ErrorMessage(message: "MeshGradient available only in iOS 18.0+")
+            throw CustomError.init()
         }
     }
+    
+    return colors
 }
 
-@available(iOS 18.0, *)
-class MeshGradientUIView: UIView {
-    private var hostingController: UIHostingController<MeshGradientView>?
-    private var options = Options()
+func convertHexToRgba (hex: NSString) -> RGBA {
+    let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+    var int: UInt64 = 0
+    let red, green, blue, alpha: UInt64
     
-    @objc func setAnimationDuration (_ animationDuration: NSNumber) {
-        options.animationDuration = Double(truncating: animationDuration)
-    }
+    Scanner(string: hex).scanHexInt64(&int)
     
-    @objc func setAnimatedColors (_ hexArray: NSArray) {
-        do {
-            let colors = try getColors(hexArray: hexArray)
-            
-            options.animatedColors = colors
-        } catch {
-            options.error = "Please check animated color attribute"
+    switch hex.count {
+        case 3: // RGB (12-bit)
+            (red, green, blue, alpha) = (
+                (int >> 8) * 17,
+                (int >> 4 & 0xF) * 17,
+                (int & 0xF) * 17,
+                255
+            )
+        case 6: // RGB (24-bit)
+            (red, green, blue, alpha) = (
+                int >> 16,
+                int >> 8 & 0xFF,
+                int & 0xFF,
+                255
+            )
+        case 8: // RGBA (32-bit)
+            (red, green, blue, alpha) = (
+                int >> 24,
+                int >> 16 & 0xFF,
+                int >> 8 & 0xFF,
+                int & 0xFF
+            )
+        default:
+            (red, green, blue, alpha) = (1, 1, 1, 0)
         }
-    }
     
-    @objc func setColors (_ hexArray: NSArray) {
-        do {
-            let colors = try getColors(hexArray: hexArray)
-            
-            options.colors = colors
-        } catch {
-            options.error = "Please check color attribute"
-        }
-    }
-    
-    @objc func setPoints(_ val: NSArray) {
-        var simdArray: [SIMD2<Float>] = []
-
-        for element in val {
-            if let tuple = element as? NSArray,
-                let x = tuple[0] as? NSNumber,
-                let y = tuple[1] as? NSNumber {
-                let simdPoint = SIMD2<Float>(x.floatValue, y.floatValue)
-
-                simdArray.append(simdPoint)
-            } else {
-                options.error = "Please check points attribute"
-            }
-        }
-        
-        options.points = simdArray
-    }
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupView()
-    }
-     
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        setupView()
-    }
-    
-    private func setupView() {
-        let view = MeshGradientView(options: options)
-        let hostingController = UIHostingController(rootView: view)
-        
-        self.hostingController = hostingController
-        
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        
-        self.addSubview(hostingController.view)
-        
-        NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: self.topAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: self.bottomAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: self.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: self.trailingAnchor)
-        ])
-    }
-}
-
-@available(iOS 18.0, *)
-@objc(ReactNativeMeshGradient)
-class ReactNativeMeshGradient: RCTViewManager {
-    @objc
-    override func view() -> UIView! {
-        return MeshGradientUIView()
-    }
-    
-    @objc
-    override static func requiresMainQueueSetup() -> Bool {
-      return true
-    }
+    return (
+        red: Double(red) / 255.0,
+        green: Double(green)  / 255.0,
+        blue: Double(blue) / 255.0,
+        opacity: Double(alpha) / 255.0
+    )
 }

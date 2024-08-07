@@ -2,6 +2,21 @@
 
 Mesh Gradient for React Native
 
+## Requirements
+
+Mesh Gradient works only on iOS 18 or higher.
+Mesh Gradient requires Xcode 16 or higher.
+
+To change the default Xcode build version, run the following command:
+```sh
+sudo xcode-select -s /path/to/Xcode.app
+```
+
+To check the current Xcode build version, run the following command:
+```sh
+xcodebuild -version
+```
+
 ## Installation
 
 ```sh
