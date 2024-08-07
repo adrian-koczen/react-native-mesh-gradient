@@ -1,11 +1,12 @@
 {
   "name": "react-native-mesh-gradient",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "react-native": "js/index",
   "source": "js/index",
   "license": "MIT",
   "author": "Adrian Koczeń",
   "homepage": "https://github.com/adrian-koczen",
+  "repository": "https://github.com/adrian-koczen/react-native-mesh-gradient",
   "description": "Mesh Gradient for React Native",
   "keywords": [
     "react-native",
