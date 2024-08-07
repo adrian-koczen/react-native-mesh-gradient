@@ -17,6 +17,10 @@ To check the current Xcode build version, run the following command:
 xcodebuild -version
 ```
 
+## Preview
+
+https://github.com/user-attachments/assets/cff00e3d-200f-47b6-b530-e4a856589e31
+
 ## Installation
 
 ```sh
