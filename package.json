@@ -1,0 +1,23 @@
+{
+  "name": "react-native-mesh-gradient",
+  "version": "0.0.1",
+  "react-native": "js/index",
+  "source": "js/index",
+  "license": "MIT",
+  "author": "Adrian Koczeń",
+  "homepage": "https://github.com/adrian-koczen",
+  "description": "Mesh Gradient for React Native",
+  "keywords": [
+    "react-native",
+    "mesh-gradient"
+  ],
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "codegenConfig": {
+    "name": "ReactNativeMeshGradientSpec",
+    "type": "modules",
+    "jsSrcsDir": "js"
+  }
+}
